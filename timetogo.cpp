@@ -9,29 +9,23 @@ using namespace std;
 class ConfigurationTime{
     public:
 
-        unsigned int jobBeginHour;
-        unsigned int jobBeginMinute;
-        unsigned int lunchDurationHour;
-        unsigned int lunchDurationMinute;
-        unsigned int jobDurationHour;
-        unsigned int jobDurationMinute;
-
         ConfigurationTime(){
-            jobBeginHour = 0;
-            jobBeginMinute = 0;
-            lunchDurationHour = 0;
-            lunchDurationMinute = 0;
-            jobDurationHour = 0;
-            jobDurationMinute = 0;
+            SetJobBeginHour(0);
+            SetJobBeginMinute(0);
+            SetLunchDurationHour(0);
+            SetLunchDurationMinute(0);
+            SetFilePath("Configuration");
+            SetJobDurationHour(0);
+            SetJobDurationMinute(0);
 
             SetLastConfigDay(0);
             SetLastConfigMonth(0);
             SetLastConfigYear(0);
         }
 
-        ConfigurationTime(std::string filePath){
-            _filePath = filePath;
-            ReceiveConfigurationFromFile();
+        ConfigurationTime(string filePath){
+            SetFilePath(filePath);
+            ReadFileAll();
         }
 
         bool FileConfigurationTimeIsUpdated(void){
@@ -69,8 +63,8 @@ class ConfigurationTime{
 
             }while ((getHour < 0 || getHour > 23) || (getMin < 0 || getMin > 59));
 
-            jobBeginHour = getHour;
-            jobBeginMinute = getMin;
+            SetJobBeginHour(getHour);
+            SetJobBeginMinute(getMin);
         }
 
         void SetLunchDurationFromKeyboard(void){
@@ -91,11 +85,11 @@ class ConfigurationTime{
 
             }while ((getHour < 0 || getHour > 23) || (getMin < 0 || getMin > 59));
 
-            lunchDurationHour = getHour;
-            lunchDurationMinute = getMin;
+            SetLunchDurationHour(getHour);
+            SetLunchDurationMinute(getMin);
         }
 
-        void ReceiveConfigurationFromFile(void){
+        void ReadFileAll(void){
             std::vector<std::string> line;
             std::string input;
 
@@ -111,13 +105,13 @@ class ConfigurationTime{
                 line.at(i).erase(0,22);
             }
 
-            jobBeginHour = stoi(line.at(0));
-            jobBeginMinute  = stoi(line.at(1));
+            SetJobBeginHour(stoi(line.at(0)));
+            SetJobBeginMinute(stoi(line.at(1)));
 
-            lunchDurationHour = stoi(line.at(2));
-            lunchDurationMinute  = stoi(line.at(3));
-            jobDurationHour = stoi(line.at(4));
-            jobDurationMinute = stoi(line.at(5));
+            SetLunchDurationHour(stoi(line.at(2)));
+            SetLunchDurationMinute(stoi(line.at(3)));
+            SetJobDurationHour(stoi(line.at(4)));
+            SetJobDurationMinute(stoi(line.at(5)));
 
             SetLastConfigDay(stoi(line.at(6)));
             SetLastConfigMonth(stoi(line.at(7)));
@@ -128,12 +122,12 @@ class ConfigurationTime{
         void WriteFileAll(void){
             std::ofstream configFile;
             configFile.open(_filePath, std::ofstream::out | std::ofstream::trunc);
-            configFile << "JOB_BEGIN_HOUR      = " << jobBeginHour << endl
-                       << "JOB_BEGIN_MIN       = " << jobBeginMinute << endl
-                       << "LUNCH_DURATION_HOUR = " << lunchDurationHour << endl
-                       << "LUNCH_DURATION_MIN  = " << lunchDurationMinute << endl
-                       << "JOB_DURATION_HOUR   = " << jobDurationHour << endl
-                       << "JOB_DURATION_MIN    = " << jobDurationMinute << endl;
+            configFile << "JOB_BEGIN_HOUR      = " << GetJobBeginHour() << endl
+                       << "JOB_BEGIN_MIN       = " << GetJobBeginMinute() << endl
+                       << "LUNCH_DURATION_HOUR = " << GetLunchDurationHour() << endl
+                       << "LUNCH_DURATION_MIN  = " << GetLunchDurationMinute() << endl
+                       << "JOB_DURATION_HOUR   = " << GetJobDurationHour() << endl
+                       << "JOB_DURATION_MIN    = " << GetJobDurationMinute() << endl;
             WriteFileUpdateLastConfigData();
             configFile.close();
         }
@@ -159,7 +153,7 @@ class ConfigurationTime{
                 outputConfigFile << line.at(i) << endl;
             } 
             // Get current time
-            std::tm tmFileTime {0};
+            std::tm tmFileTime = {0};
             std::time_t timeNow = std::time(0);
             std::tm* tmTimeNow = localtime(&timeNow); 
             
@@ -168,43 +162,79 @@ class ConfigurationTime{
                               << "LAST_CONFIG_YEAR    = " << tmTimeNow->tm_year - 100 << endl;
             outputConfigFile.close();
         }
-
-        
+        void SetFilePath(string filePathName) {_filePath = filePathName;}
+        void SetJobBeginHour(unsigned int value){_jobBegin.hour = value; }
+        void SetJobBeginMinute(unsigned int value){_jobBegin.minute = value; }
+        void SetLunchDurationHour(unsigned int value){_lunchDuration.hour = value; }
+        void SetLunchDurationMinute(unsigned int value){_lunchDuration.minute = value; }
+        void SetJobDurationHour(unsigned int value){_jobDuration.hour = value; }
+        void SetJobDurationMinute(unsigned int value){_jobDuration.minute = value; }
         void SetLastConfigDay(unsigned int value){_lastConfig.day = value; }
         void SetLastConfigMonth(unsigned int value){_lastConfig.month = value; }
         void SetLastConfigYear(unsigned int value){_lastConfig.year = value; }
-        void SetJobRemainingTimeHour(unsigned int value){_jobRemainingTime.hour = value; }
-        void SetJobRemainingTimeMinute(unsigned int value){_jobRemainingTime.minute = value; }
+        string GetFilePath(void) { return _filePath;}
+        unsigned int GetJobBeginHour(void){ return _jobBegin.hour; }
+        unsigned int GetJobBeginMinute(void){ return _jobBegin.minute; }
+        unsigned int GetLunchDurationHour(void){ return _lunchDuration.hour; }
+        unsigned int GetLunchDurationMinute(void){ return _lunchDuration.minute; }
+        unsigned int GetJobDurationHour(void){ return _jobDuration.hour; }
+        unsigned int GetJobDurationMinute(void){ return _jobDuration.minute; }
         unsigned int GetLastConfigDay(void){ return _lastConfig.day; }
         unsigned int GetLastConfigMonth(void){ return _lastConfig.month; }
         unsigned int GetLastConfigYear(void){ return _lastConfig.year; }
-        unsigned int GetJobRemainingTimeHour(void){ return _jobRemainingTime.hour; }
-        unsigned int GetJobRemainingTimeMinute(void){ return _jobRemainingTime.minute; }
+        unsigned int GetJobRemainingTimeHour(void){return CalculateJobRemainingTime(Hour);}
+        unsigned int GetJobRemainingTimeMinute(void){return CalculateJobRemainingTime(Minute);}
+        unsigned int GetEndTimeHour(void){return CalculateEndTime(Hour);}
+        unsigned int GetEndTimeMinute(void){return CalculateEndTime(Minute);}
 
     private:
         string _filePath;
         enum TimeAndDateUnit {Hour, Minute, Day, Month, Year};
+        struct JOB_BEGIN {unsigned int hour; unsigned int minute;} _jobBegin;
+        struct LUNCH_DURATION  {unsigned int hour; unsigned int minute;} _lunchDuration;
+        struct JOB_DURATION {unsigned int hour; unsigned int minute;} _jobDuration;
         struct LAST_CONFIG {unsigned int day ; unsigned int month; unsigned int year;} _lastConfig;
-        struct JOB_REMAINING_TIME{unsigned int hour; unsigned int minute;} _jobRemainingTime;
 
-        unsigned int CalculateJobRemainingTime(TimeAndDateUnit unit, struct JOB_REMAINING_TIME time){
-            return 0;
+        unsigned int CalculateJobRemainingTime(TimeAndDateUnit unit){       
+            // Current time            
+            std::tm tmFileTime = {0};
+            std::time_t timeNow = std::time(0);
+            std::tm* tmTimeNow = localtime(&timeNow);
+
+            // End Time
+            std::tm tmEnd = *tmTimeNow;
+            tmEnd.tm_hour = GetJobBeginHour() + GetLunchDurationHour() + GetJobDurationHour();
+            tmEnd.tm_min =  GetJobBeginMinute() + GetLunchDurationMinute() + GetJobDurationMinute();
+            
+            time_t difftimeSeconds = difftime(mktime(&tmEnd), mktime(tmTimeNow));
+
+            if (unit == Hour){
+                return(difftimeSeconds / 3600);
+            }
+            else{
+                return ((difftimeSeconds / 60) - ((difftimeSeconds / 3600) * 60));
+            }
         }
 
+        unsigned int CalculateEndTime(TimeAndDateUnit unit){
+            std::tm tmEnd = {0};
+            tmEnd.tm_hour = GetJobBeginHour() + GetLunchDurationHour() + GetJobDurationHour();
+            tmEnd.tm_min =  GetJobBeginMinute() + GetLunchDurationMinute() + GetJobDurationMinute();
+            mktime(&tmEnd);
+            if (unit == Hour){
+                return(tmEnd.tm_hour);
+            }
+            else{
+                return (tmEnd.tm_min);
+            }
+        }
 
 
 };
 
-std::tm RemainingTime(std::tm* end, std::tm* begin);
-
 int main(int argc, char* argv[])
 {
     ConfigurationTime config = ConfigurationTime("Configuration");
-
-    // Get current time
-    std::tm tmFileTime {0};
-    std::time_t timeNow = std::time(0);
-    std::tm* tmTimeNow = localtime(&timeNow);
 
     // check if Configuration read from file is updated
     if (!config.FileConfigurationTimeIsUpdated()){
@@ -212,51 +242,16 @@ int main(int argc, char* argv[])
         config.WriteFileAll();
     }
 
-    std::tm tmEnd = {0};
-    tmEnd.tm_hour = 2;//config.jobBeginHour + config.lunchDurationHour + config.jobDurationHour;
-    tmEnd.tm_min =  70;// config.jobBeginMinute + config.lunchDurationMinute + config.jobDurationMinute;
-
-    cout << tmEnd.tm_hour << "h" << tmEnd.tm_min << "min"<< endl;
-    
-
-    std::tm timeRemaining = RemainingTime(&tmEnd, tmTimeNow);
-
-    return (0);
-
-    char buffer[80];
     printf("\n####################################\n");
     printf("#                                  #\n"  );
-    printf("#  Hora de entrada    : %02dh %02dmin  #\n",config.jobBeginHour, config.jobBeginMinute);
-    printf("#  Duração do trabalho: %02dh %02dmin  #\n",config.jobDurationHour, config.jobDurationMinute);
-    printf("#  Duração do almoço  : %02dh %02dmin  #\n",config.lunchDurationHour, config.lunchDurationMinute);
+    printf("#  Hora de entrada    : %02dh %02dmin  #\n",config.GetJobBeginHour(), config.GetJobBeginMinute());
+    printf("#  Duração do trabalho: %02dh %02dmin  #\n",config.GetJobDurationHour(), config.GetJobDurationMinute());
+    printf("#  Duração do almoço  : %02dh %02dmin  #\n",config.GetLunchDurationHour(), config.GetLunchDurationMinute());
     printf("#                                  #\n"  );
-    strftime (buffer,sizeof(buffer),"Hora de saida      : %Hh %Mmin",&tmEnd);
-    printf("#  %s  #\n", buffer);
+    printf("#  Hora de saida      : %02dh %02dmin  #\n",config.GetEndTimeHour(), config.GetEndTimeMinute());
     printf("#                                  #\n");
-    strftime (buffer,sizeof(buffer),"Tempo restante     : %Hh %Mmin",&timeRemaining);
-    printf("#  %s  #\n", buffer);
+    printf("#  Tempo restante     : %02dh %02dmin  #\n",config.GetJobRemainingTimeHour(), config.GetJobRemainingTimeMinute());
     printf("#                                  #\n"  );
     printf("####################################\n\n");
     
-}
-
-std::tm RemainingTime(std::tm* end, std::tm* begin){
-    std::tm mem;
-    std::tm ret {0};
-    
-    mem = *end;
-    *end = *begin;
-    end->tm_hour = mem.tm_hour;
-    end->tm_min = mem.tm_min;
-    
-    time_t difftimeSeconds = difftime(mktime(end), mktime(begin));
-
-    mktime(end);
-
-    cout << end->tm_hour << "h" << end->tm_min << "min"<< endl;
-
-    ret.tm_hour = difftimeSeconds / 3600;
-    ret.tm_min = (difftimeSeconds / 60) - (ret.tm_hour * 60);
-
-    return ret;
 }
