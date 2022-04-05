@@ -67,28 +67,6 @@ class ConfigurationTime{
             SetJobBeginMinute(getMin);
         }
 
-        void SetLunchDurationFromKeyboard(void){
-            int getHour = 0, getMin = 0;
-            string input = "";
-            
-            do{
-                cout << "Digite duração do horário de almoço: ";
-                getline(cin,input);
-
-                for (char& c : input){
-                    if (isalpha(c)){
-                        c = ' ';
-                    }
-                }
-                stringstream ss(input);     
-                ss >> getHour >> getMin;
-
-            }while ((getHour < 0 || getHour > 23) || (getMin < 0 || getMin > 59));
-
-            SetLunchDurationHour(getHour);
-            SetLunchDurationMinute(getMin);
-        }
-
         void ReadFileAll(void){
             std::vector<std::string> line;
             std::string input;
@@ -128,8 +106,8 @@ class ConfigurationTime{
                        << "LUNCH_DURATION_MIN  = " << GetLunchDurationMinute() << endl
                        << "JOB_DURATION_HOUR   = " << GetJobDurationHour() << endl
                        << "JOB_DURATION_MIN    = " << GetJobDurationMinute() << endl;
-            WriteFileUpdateLastConfigData();
             configFile.close();
+            WriteFileUpdateLastConfigData();
         }
 
         void WriteFileUpdateLastConfigData(void){
@@ -137,8 +115,7 @@ class ConfigurationTime{
             std::string input;
             fstream inputConfigFile;
             fstream outputConfigFile;
-            
-            
+              
             // read all Configuration file
             inputConfigFile.open(_filePath, std::fstream::in);
             while (std::getline(inputConfigFile, input)){
@@ -146,12 +123,12 @@ class ConfigurationTime{
             }
             inputConfigFile.close();
 
-
             // write Configuration file [refresh last day, month and year file config for NOW date]
             outputConfigFile.open(_filePath, std::fstream::out | std::fstream::trunc);
             for (unsigned int i = 0; i < 6 ; i++){
                 outputConfigFile << line.at(i) << endl;
             } 
+            
             // Get current time
             std::tm tmFileTime = {0};
             std::time_t timeNow = std::time(0);
@@ -162,6 +139,85 @@ class ConfigurationTime{
                               << "LAST_CONFIG_YEAR    = " << tmTimeNow->tm_year - 100 << endl;
             outputConfigFile.close();
         }
+
+        void WriteFileJobBegin(void){
+            std::vector<std::string> line;
+            std::string input;
+            fstream inputConfigFile;
+            fstream outputConfigFile;
+            
+            // read all Configuration file
+            inputConfigFile.open(_filePath, std::fstream::in);
+            while (std::getline(inputConfigFile, input)){
+                line.push_back(input);   
+            }
+            inputConfigFile.close();
+
+            //rewrite whole file
+            outputConfigFile.open(_filePath, std::fstream::out | std::fstream::trunc);
+            outputConfigFile  << "JOB_BEGIN_HOUR      = " << GetJobBeginHour() << endl
+                              << "JOB_BEGIN_MIN       = " << GetJobBeginMinute() << endl;
+            for (unsigned int i = 2; i < 6 ; i++){
+                outputConfigFile << line.at(i) << endl;
+            } 
+
+            outputConfigFile.close();
+
+            WriteFileUpdateLastConfigData();
+        }
+
+        void WriteFileJobDuration(void){
+            std::vector<std::string> line;
+            std::string input;
+            fstream inputConfigFile;
+            fstream outputConfigFile;
+            
+            // read all Configuration file
+            inputConfigFile.open(_filePath, std::fstream::in);
+            while (std::getline(inputConfigFile, input)){
+                line.push_back(input);   
+            }
+            inputConfigFile.close();
+
+            //rewrite whole file
+            outputConfigFile.open(_filePath, std::fstream::out | std::fstream::trunc);
+            for (unsigned int i = 0; i < 4 ; i++){
+                outputConfigFile << line.at(i) << endl;
+            } 
+            outputConfigFile  << "JOB_DURATION_HOUR   = " << GetJobDurationHour() << endl
+                              << "JOB_DURATION_MIN    = " << GetJobDurationMinute() << endl;
+            for (unsigned int i = 6; i < 9 ; i++){
+                outputConfigFile << line.at(i) << endl;
+            } 
+            outputConfigFile.close();
+        }
+
+        void WriteFileLunchDuration(void){
+            std::vector<std::string> line;
+            std::string input;
+            fstream inputConfigFile;
+            fstream outputConfigFile;
+            
+            // read all Configuration file
+            inputConfigFile.open(_filePath, std::fstream::in);
+            while (std::getline(inputConfigFile, input)){
+                line.push_back(input);   
+            }
+            inputConfigFile.close();
+
+            //rewrite whole file
+            outputConfigFile.open(_filePath, std::fstream::out | std::fstream::trunc);
+            for (unsigned int i = 0; i < 2 ; i++){
+                outputConfigFile << line.at(i) << endl;
+            } 
+            outputConfigFile  << "LUNCH_DURATION_HOUR = " << GetLunchDurationHour() << endl
+                              << "LUNCH_DURATION_MIN  = " << GetLunchDurationMinute() << endl;
+            for (unsigned int i = 4; i < 9 ; i++){
+                outputConfigFile << line.at(i) << endl;
+            } 
+            outputConfigFile.close();
+        }
+        
         void SetFilePath(string filePathName) {_filePath = filePathName;}
         void SetJobBeginHour(unsigned int value){_jobBegin.hour = value; }
         void SetJobBeginMinute(unsigned int value){_jobBegin.minute = value; }
@@ -236,10 +292,46 @@ int main(int argc, char* argv[])
 {
     ConfigurationTime config = ConfigurationTime("Configuration");
 
+    if (argc > 0){
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if ((arg == "-h") || (arg == "--help")) {
+                cout << "Exibir menu de help (em desenvolvimento)" << endl;
+                return 0;
+            }
+            if ((arg == "-j") || (arg == "--jornada")) {
+                if ((i + 2) <= argc ){
+                    arg = argv[++i];
+                    config.SetJobDurationHour(stoi(arg));
+                    arg = argv[++i];
+                    config.SetJobDurationMinute(stoi(arg));
+                    config.WriteFileJobDuration();
+                }
+                else{
+                    cout << "teste jornada - faltam argumentos" << endl;
+                }
+                return 0;
+            }
+            if ((arg == "-a") || (arg == "--almoco")) {
+                if ((i + 2) <= argc ){
+                    arg = argv[++i];
+                    config.SetLunchDurationHour(stoi(arg));
+                    arg = argv[++i];
+                    config.SetLunchDurationMinute(stoi(arg));
+                    config.WriteFileLunchDuration();
+                }
+                else{
+                    cout << "teste almoco - faltam argumentos" << endl;
+                }
+                return 0;
+            }
+        }
+    }
+
     // check if Configuration read from file is updated
     if (!config.FileConfigurationTimeIsUpdated()){
         config.SetJobBeginFromKeyboard();
-        config.WriteFileAll();
+        config.WriteFileJobBegin();
     }
 
     printf("\n####################################\n");
@@ -254,4 +346,5 @@ int main(int argc, char* argv[])
     printf("#                                  #\n"  );
     printf("####################################\n\n");
     
+    return(0);
 }
