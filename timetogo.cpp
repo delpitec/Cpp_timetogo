@@ -219,7 +219,7 @@ class ConfigurationTime{
         }
         
         void SetFilePath(string filePathName) {_filePath = filePathName;}
-        void SetJobBeginHour(unsigned int value){_jobBegin.hour = value; }
+        void SetJobBeginHour(unsigned int value){ _jobBegin.hour = value; }
         void SetJobBeginMinute(unsigned int value){_jobBegin.minute = value; }
         void SetLunchDurationHour(unsigned int value){_lunchDuration.hour = value; }
         void SetLunchDurationMinute(unsigned int value){_lunchDuration.minute = value; }
@@ -288,9 +288,51 @@ class ConfigurationTime{
 
 };
 
+class Command{
+    public:
+
+    string Name;
+    string Flag;
+    string Description;
+    unsigned int ParamQty;
+
+    Command(string name, string flag, string description, unsigned int paramQty){
+        Name = name;
+        Flag = flag;
+        Description = description;
+        ParamQty = paramQty;
+    }
+
+    void Function(
+        ConfigurationTime& passingFunction1Class,
+        void (ConfigurationTime::*passingFunction1)(unsigned int), 
+        unsigned int passingFunction1Param1) {
+        
+        (passingFunction1Class.*passingFunction1)(passingFunction1Param1);
+    
+    }
+
+    void Function(
+        ConfigurationTime& passingFunction2Class,
+        void (ConfigurationTime::*passingFunction2)(unsigned int,unsigned int), 
+        unsigned int passingFunction2Param1,
+        unsigned int passingFunction2Param2) {
+  
+        (passingFunction2Class.*passingFunction2)(passingFunction2Param1, passingFunction2Param2);  
+    }
+
+};
+
 int main(int argc, char* argv[])
-{
+{   
+    Command lunch = Command("--lunch", "-l", "Lunch time duration", 2);
+
     ConfigurationTime config = ConfigurationTime("Configuration");
+    
+    //Command c;
+    //c.Function(config,&ConfigurationTime::SetJobBeginHour, 15);
+
+    return(0);
 
     if (argc > 0){
         for (int i = 1; i < argc; ++i) {
@@ -348,3 +390,4 @@ int main(int argc, char* argv[])
     
     return(0);
 }
+
