@@ -219,7 +219,7 @@ class ConfigurationTime{
         }
         
         void SetFilePath(string filePathName) {_filePath = filePathName;}
-        void SetJobBeginHour(unsigned int value){ _jobBegin.hour = value; }
+        void SetJobBeginHour(unsigned int value){_jobBegin.hour = value; }
         void SetJobBeginMinute(unsigned int value){_jobBegin.minute = value; }
         void SetLunchDurationHour(unsigned int value){_lunchDuration.hour = value; }
         void SetLunchDurationMinute(unsigned int value){_lunchDuration.minute = value; }
@@ -294,86 +294,80 @@ class Command{
     string Name;
     string Flag;
     string Description;
-    unsigned int ParamQty;
-
-    Command(string name, string flag, string description, unsigned int paramQty){
+    unsigned int ParamQty;    
+    ConfigurationTime* PassingFunction1Class;    
+    ConfigurationTime* PassingFunction2Class;
+    void (ConfigurationTime::*PassingFunction2)(unsigned int);
+    void (ConfigurationTime::*PassingFunction1)(unsigned int);
+    
+    Command(string name, string flag, string description, unsigned int paramQty,
+        ConfigurationTime* passingFunction1Class, void (ConfigurationTime::*passingFunction1)(unsigned int),
+        ConfigurationTime* passingFunction2Class, void (ConfigurationTime::*passingFunction2)(unsigned int)){
+        
         Name = name;
         Flag = flag;
         Description = description;
         ParamQty = paramQty;
+
+        PassingFunction1Class = passingFunction1Class;
+        PassingFunction1 = passingFunction1;
+
+        PassingFunction2Class = passingFunction2Class;
+        PassingFunction2 = passingFunction2;
     }
 
-    void Function(
-        ConfigurationTime& passingFunction1Class,
-        void (ConfigurationTime::*passingFunction1)(unsigned int), 
-        unsigned int passingFunction1Param1) {
-        
-        (passingFunction1Class.*passingFunction1)(passingFunction1Param1);
-    
+   void Function(unsigned int passingFunction1Param1) { 
+        (*PassingFunction1Class.*PassingFunction1)(passingFunction1Param1);
     }
 
-    void Function(
-        ConfigurationTime& passingFunction2Class,
-        void (ConfigurationTime::*passingFunction2)(unsigned int,unsigned int), 
-        unsigned int passingFunction2Param1,
-        unsigned int passingFunction2Param2) {
-  
-        (passingFunction2Class.*passingFunction2)(passingFunction2Param1, passingFunction2Param2);  
+    void Function(unsigned int passingFunction1Param1, unsigned int passingFunction2Param1) {    
+        (*PassingFunction1Class.*PassingFunction1)(passingFunction1Param1);
+        (*PassingFunction1Class.*PassingFunction2)(passingFunction2Param1);
     }
 
 };
 
 int main(int argc, char* argv[])
 {   
-    Command lunch = Command("--lunch", "-l", "Lunch time duration", 2);
-
     ConfigurationTime config = ConfigurationTime("Configuration");
     
-    //Command c;
-    //c.Function(config,&ConfigurationTime::SetJobBeginHour, 15);
+    Command lunch = Command("--lunch", "-l", "Lunch time duration", 2, 
+                            &config, &ConfigurationTime::SetLunchDurationHour,
+                            &config, &ConfigurationTime::SetLunchDurationMinute);
 
-    return(0);
-
+    Command jobBegin = Command("--job-begin", "-b", "Job begin hour and minute if is not updated yet", 2, 
+                            &config, &ConfigurationTime::SetJobBeginHour,
+                            &config, &ConfigurationTime::SetJobBeginMinute);
+    
+    Command jobDuration = Command("--job-duration", "-d", "Job duration hour and minute", 2, 
+                            &config, &ConfigurationTime::SetJobDurationHour,
+                            &config, &ConfigurationTime::SetJobDurationMinute);
+    
     if (argc > 0){
         for (int i = 1; i < argc; ++i) {
             std::string arg = argv[i];
-            if ((arg == "-h") || (arg == "--help")) {
-                cout << "Exibir menu de help (em desenvolvimento)" << endl;
-                return 0;
+            if ((arg == lunch.Flag) || (arg == lunch.Name)) {
+                std::string arg1 = argv[++i];
+                std::string arg2 = argv[++i];
+                lunch.Function(stoi(arg1),stoi(arg2));
             }
-            if ((arg == "-j") || (arg == "--jornada")) {
-                if ((i + 2) <= argc ){
-                    arg = argv[++i];
-                    config.SetJobDurationHour(stoi(arg));
-                    arg = argv[++i];
-                    config.SetJobDurationMinute(stoi(arg));
-                    config.WriteFileJobDuration();
-                }
-                else{
-                    cout << "teste jornada - faltam argumentos" << endl;
-                }
-                return 0;
+            if ((arg == jobBegin.Flag) || (arg == jobBegin.Name)) {
+                if (!config.FileConfigurationTimeIsUpdated()){
+                    std::string arg1 = argv[++i];
+                    std::string arg2 = argv[++i];
+                    jobBegin.Function(stoi(arg1),stoi(arg2));
+                } 
             }
-            if ((arg == "-a") || (arg == "--almoco")) {
-                if ((i + 2) <= argc ){
-                    arg = argv[++i];
-                    config.SetLunchDurationHour(stoi(arg));
-                    arg = argv[++i];
-                    config.SetLunchDurationMinute(stoi(arg));
-                    config.WriteFileLunchDuration();
-                }
-                else{
-                    cout << "teste almoco - faltam argumentos" << endl;
-                }
-                return 0;
+            if ((arg == jobDuration.Flag) || (arg == jobDuration.Name)) {
+                if (!config.FileConfigurationTimeIsUpdated()){
+                    std::string arg1 = argv[++i];
+                    std::string arg2 = argv[++i];
+                    jobDuration.Function(stoi(arg1),stoi(arg2));
+                } 
             }
         }
-    }
 
-    // check if Configuration read from file is updated
-    if (!config.FileConfigurationTimeIsUpdated()){
-        config.SetJobBeginFromKeyboard();
-        config.WriteFileJobBegin();
+        config.WriteFileAll();
     }
 
     printf("\n####################################\n");
