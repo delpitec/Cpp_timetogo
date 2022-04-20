@@ -44,6 +44,20 @@ class ConfigurationTime{
             }
         }
 
+        void ShowConfigurationTimeInTheConsole(void){
+            printf("\n####################################\n");
+            printf("#                                  #\n"  );
+            printf("#  Hora de entrada    : %02dh %02dmin  #\n",GetJobBeginHour(), GetJobBeginMinute());
+            printf("#  Duração do trabalho: %02dh %02dmin  #\n",GetJobDurationHour(), GetJobDurationMinute());
+            printf("#  Duração do almoço  : %02dh %02dmin  #\n",GetLunchDurationHour(), GetLunchDurationMinute());
+            printf("#                                  #\n"  );
+            printf("#  Hora de saida      : %02dh %02dmin  #\n",GetEndTimeHour(), GetEndTimeMinute());
+            printf("#                                  #\n");
+            printf("#  Tempo restante     : %02dh %02dmin  #\n",GetJobRemainingTimeHour(), GetJobRemainingTimeMinute());
+            printf("#                                  #\n"  );
+            printf("####################################\n\n");
+        }
+
         void SetJobBeginFromKeyboard(void){
             int getHour, getMin;
             string input = "";
@@ -295,93 +309,92 @@ class Command{
     string Flag;
     string Description;
     unsigned int ParamQty;    
-    ConfigurationTime* PassingFunction1Class;    
-    ConfigurationTime* PassingFunction2Class;
-    void (ConfigurationTime::*PassingFunction2)(unsigned int);
+    ConfigurationTime* PassingFunctionClass; 
+    void (ConfigurationTime::*PassingFunction0)(void);
     void (ConfigurationTime::*PassingFunction1)(unsigned int);
+    void (ConfigurationTime::*PassingFunction2)(unsigned int);
+    
     
     Command(string name, string flag, string description, unsigned int paramQty,
-        ConfigurationTime* passingFunction1Class, void (ConfigurationTime::*passingFunction1)(unsigned int),
-        ConfigurationTime* passingFunction2Class, void (ConfigurationTime::*passingFunction2)(unsigned int)){
+        ConfigurationTime* passingFunctionClass, void (ConfigurationTime::*passingFunction0)(void)){
         
         Name = name;
         Flag = flag;
         Description = description;
         ParamQty = paramQty;
 
-        PassingFunction1Class = passingFunction1Class;
-        PassingFunction1 = passingFunction1;
+        PassingFunctionClass = passingFunctionClass;
+        PassingFunction0 = passingFunction0;
+    }
 
-        PassingFunction2Class = passingFunction2Class;
+    Command(string name, string flag, string description, unsigned int paramQty,
+        ConfigurationTime* passingFunctionClass, void (ConfigurationTime::*passingFunction1)(unsigned int),
+        void (ConfigurationTime::*passingFunction2)(unsigned int)){
+        
+        Name = name;
+        Flag = flag;
+        Description = description;
+        ParamQty = paramQty;
+
+        PassingFunctionClass = passingFunctionClass;
+        PassingFunction1 = passingFunction1;
         PassingFunction2 = passingFunction2;
     }
 
-   void Function(unsigned int passingFunction1Param1) { 
-        (*PassingFunction1Class.*PassingFunction1)(passingFunction1Param1);
+    void Function(void) { 
+        (*PassingFunctionClass.*PassingFunction0)();
+    }
+    
+    void Function(unsigned int passingFunction1Param1) { 
+        (*PassingFunctionClass.*PassingFunction1)(passingFunction1Param1);
     }
 
     void Function(unsigned int passingFunction1Param1, unsigned int passingFunction2Param1) {    
-        (*PassingFunction1Class.*PassingFunction1)(passingFunction1Param1);
-        (*PassingFunction1Class.*PassingFunction2)(passingFunction2Param1);
+        (*PassingFunctionClass.*PassingFunction1)(passingFunction1Param1);
+        (*PassingFunctionClass.*PassingFunction2)(passingFunction2Param1);
     }
 
 };
 
 int main(int argc, char* argv[])
 {   
+    //ConfigurationTime config = ConfigurationTime("/home/rafael.pino/time-to-go/Configuration");
     ConfigurationTime config = ConfigurationTime("Configuration");
     
-    Command lunch = Command("--lunch", "-l", "Lunch time duration", 2, 
-                            &config, &ConfigurationTime::SetLunchDurationHour,
-                            &config, &ConfigurationTime::SetLunchDurationMinute);
-
     Command jobBegin = Command("--job-begin", "-b", "Job begin hour and minute if is not updated yet", 2, 
-                            &config, &ConfigurationTime::SetJobBeginHour,
-                            &config, &ConfigurationTime::SetJobBeginMinute);
-    
+                               &config, &ConfigurationTime::SetJobBeginHour, &ConfigurationTime::SetJobBeginMinute);
+
     Command jobDuration = Command("--job-duration", "-d", "Job duration hour and minute", 2, 
-                            &config, &ConfigurationTime::SetJobDurationHour,
-                            &config, &ConfigurationTime::SetJobDurationMinute);
+                                  &config, &ConfigurationTime::SetJobDurationHour, &ConfigurationTime::SetJobDurationMinute);
+
+    Command lunch = Command("--lunch", "-l", "Lunch time duration", 2, 
+                            &config, &ConfigurationTime::SetLunchDurationHour, &ConfigurationTime::SetLunchDurationMinute);
+    
+    Command show = Command("--show", "-s", "Display time configuration and status", 2, &config, &ConfigurationTime::ShowConfigurationTimeInTheConsole);
+
+    Command help = Command("--help", "-h", "Display help information about timetogo app", 0, NULL, NULL, NULL);
+        
     
     if (argc > 0){
         for (int i = 1; i < argc; ++i) {
             std::string arg = argv[i];
             if ((arg == lunch.Flag) || (arg == lunch.Name)) {
-                std::string arg1 = argv[++i];
-                std::string arg2 = argv[++i];
-                lunch.Function(stoi(arg1),stoi(arg2));
+                lunch.Function(stoi(argv[i+1], NULL, 10),stoi(argv[i+2], NULL, 10));
             }
             if ((arg == jobBegin.Flag) || (arg == jobBegin.Name)) {
                 if (!config.FileConfigurationTimeIsUpdated()){
-                    std::string arg1 = argv[++i];
-                    std::string arg2 = argv[++i];
-                    jobBegin.Function(stoi(arg1),stoi(arg2));
+                    jobBegin.Function(stoi(argv[i+1], NULL, 10),stoi(argv[i+2], NULL, 10));
                 } 
             }
             if ((arg == jobDuration.Flag) || (arg == jobDuration.Name)) {
-                if (!config.FileConfigurationTimeIsUpdated()){
-                    std::string arg1 = argv[++i];
-                    std::string arg2 = argv[++i];
-                    jobDuration.Function(stoi(arg1),stoi(arg2));
-                } 
+                jobDuration.Function(stoi(argv[i+1], NULL, 10),stoi(argv[i+2], NULL, 10));
+            }
+            if ((arg == show.Flag) || (arg == show.Name)) {
+                show.Function();
             }
         }
-
         config.WriteFileAll();
     }
-
-    printf("\n####################################\n");
-    printf("#                                  #\n"  );
-    printf("#  Hora de entrada    : %02dh %02dmin  #\n",config.GetJobBeginHour(), config.GetJobBeginMinute());
-    printf("#  Duração do trabalho: %02dh %02dmin  #\n",config.GetJobDurationHour(), config.GetJobDurationMinute());
-    printf("#  Duração do almoço  : %02dh %02dmin  #\n",config.GetLunchDurationHour(), config.GetLunchDurationMinute());
-    printf("#                                  #\n"  );
-    printf("#  Hora de saida      : %02dh %02dmin  #\n",config.GetEndTimeHour(), config.GetEndTimeMinute());
-    printf("#                                  #\n");
-    printf("#  Tempo restante     : %02dh %02dmin  #\n",config.GetJobRemainingTimeHour(), config.GetJobRemainingTimeMinute());
-    printf("#                                  #\n"  );
-    printf("####################################\n\n");
     
     return(0);
 }
-
